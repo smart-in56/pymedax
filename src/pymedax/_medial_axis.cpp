@@ -3,6 +3,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstddef>
 #include <cstdint>
 #include <limits>
 #include <queue>
@@ -13,6 +14,8 @@
 namespace py = pybind11;
 
 namespace {
+
+using Index = std::ptrdiff_t;
 
 struct QueueEntry {
     double distance;
@@ -39,15 +42,15 @@ constexpr int kNeighborCount = 8;
 constexpr int kNeighborRows[kNeighborCount] = {-1, -1, -1, 0, 0, 1, 1, 1};
 constexpr int kNeighborCols[kNeighborCount] = {-1, 0, 1, -1, 1, -1, 0, 1};
 
-bool is_boundary(const std::uint8_t* image, ssize_t rows, ssize_t cols,
-                 ssize_t row, ssize_t col) {
+bool is_boundary(const std::uint8_t* image, Index rows, Index cols, Index row,
+                 Index col) {
     if (image[row * cols + col] == 0) {
         return false;
     }
 
     for (int direction = 0; direction < kNeighborCount; ++direction) {
-        const ssize_t neighbor_row = row + kNeighborRows[direction];
-        const ssize_t neighbor_col = col + kNeighborCols[direction];
+        const Index neighbor_row = row + kNeighborRows[direction];
+        const Index neighbor_col = col + kNeighborCols[direction];
         if (neighbor_row < 0 || neighbor_row >= rows || neighbor_col < 0 ||
             neighbor_col >= cols ||
             image[neighbor_row * cols + neighbor_col] == 0) {
@@ -59,14 +62,14 @@ bool is_boundary(const std::uint8_t* image, ssize_t rows, ssize_t cols,
 
 bool has_different_processed_front(
     const std::vector<std::uint8_t>& processed,
-    const std::vector<std::int64_t>& closest_source, ssize_t rows, ssize_t cols,
+    const std::vector<std::int64_t>& closest_source, Index rows, Index cols,
     std::int64_t pixel, std::int64_t source) {
-    const ssize_t row = static_cast<ssize_t>(pixel / cols);
-    const ssize_t col = static_cast<ssize_t>(pixel % cols);
+    const Index row = static_cast<Index>(pixel / cols);
+    const Index col = static_cast<Index>(pixel % cols);
 
     for (int direction = 0; direction < kNeighborCount; ++direction) {
-        const ssize_t neighbor_row = row + kNeighborRows[direction];
-        const ssize_t neighbor_col = col + kNeighborCols[direction];
+        const Index neighbor_row = row + kNeighborRows[direction];
+        const Index neighbor_col = col + kNeighborCols[direction];
         if (neighbor_row < 0 || neighbor_row >= rows || neighbor_col < 0 ||
             neighbor_col >= cols) {
             continue;
@@ -81,10 +84,10 @@ bool has_different_processed_front(
 
 bool has_sufficient_front_angle(
     const std::vector<std::uint8_t>& processed,
-    const std::vector<std::int64_t>& closest_source, ssize_t rows, ssize_t cols,
+    const std::vector<std::int64_t>& closest_source, Index rows, Index cols,
     std::int64_t pixel, double angle_threshold_degrees) {
-    const ssize_t row = static_cast<ssize_t>(pixel / cols);
-    const ssize_t col = static_cast<ssize_t>(pixel % cols);
+    const Index row = static_cast<Index>(pixel / cols);
+    const Index col = static_cast<Index>(pixel % cols);
     std::vector<std::int64_t> sources;
 
     const auto add_source = [&sources](std::int64_t source) {
@@ -99,8 +102,8 @@ bool has_sufficient_front_angle(
 
     // Ignore unprocessed neighbors: their source is not known yet.
     for (int direction = 0; direction < kNeighborCount; ++direction) {
-        const ssize_t neighbor_row = row + kNeighborRows[direction];
-        const ssize_t neighbor_col = col + kNeighborCols[direction];
+        const Index neighbor_row = row + kNeighborRows[direction];
+        const Index neighbor_col = col + kNeighborCols[direction];
         if (neighbor_row < 0 || neighbor_row >= rows || neighbor_col < 0 ||
             neighbor_col >= cols) {
             continue;
@@ -120,8 +123,8 @@ bool has_sufficient_front_angle(
     std::vector<double> angles;
     angles.reserve(sources.size());
     for (const std::int64_t source : sources) {
-        const ssize_t source_row = static_cast<ssize_t>(source / cols);
-        const ssize_t source_col = static_cast<ssize_t>(source % cols);
+        const Index source_row = static_cast<Index>(source / cols);
+        const Index source_col = static_cast<Index>(source % cols);
         const double row_delta = static_cast<double>(source_row - row);
         const double col_delta = static_cast<double>(source_col - col);
         angles.push_back(std::atan2(row_delta, col_delta));
@@ -153,8 +156,8 @@ py::tuple compute_medial_axis(
         throw py::value_error("image must be a 2D NumPy array");
     }
 
-    const ssize_t rows = image_info.shape[0];
-    const ssize_t cols = image_info.shape[1];
+    const Index rows = static_cast<Index>(image_info.shape[0]);
+    const Index cols = static_cast<Index>(image_info.shape[1]);
     const std::size_t pixel_count = static_cast<std::size_t>(rows * cols);
     const auto* image = static_cast<const std::uint8_t*>(image_info.ptr);
 
@@ -165,8 +168,8 @@ py::tuple compute_medial_axis(
     std::vector<std::uint8_t> axis(pixel_count, 0);
     Queue queue;
 
-    for (ssize_t row = 0; row < rows; ++row) {
-        for (ssize_t col = 0; col < cols; ++col) {
+    for (Index row = 0; row < rows; ++row) {
+        for (Index col = 0; col < cols; ++col) {
             const std::int64_t pixel = row * cols + col;
             if (!is_boundary(image, rows, cols, row, col)) {
                 continue;
@@ -196,14 +199,14 @@ py::tuple compute_medial_axis(
             axis[current.pixel] = 1;
         }
 
-        const ssize_t row = static_cast<ssize_t>(current.pixel / cols);
-        const ssize_t col = static_cast<ssize_t>(current.pixel % cols);
-        const ssize_t source_row = static_cast<ssize_t>(current.source / cols);
-        const ssize_t source_col = static_cast<ssize_t>(current.source % cols);
+        const Index row = static_cast<Index>(current.pixel / cols);
+        const Index col = static_cast<Index>(current.pixel % cols);
+        const Index source_row = static_cast<Index>(current.source / cols);
+        const Index source_col = static_cast<Index>(current.source % cols);
 
         for (int direction = 0; direction < kNeighborCount; ++direction) {
-            const ssize_t neighbor_row = row + kNeighborRows[direction];
-            const ssize_t neighbor_col = col + kNeighborCols[direction];
+            const Index neighbor_row = row + kNeighborRows[direction];
+            const Index neighbor_col = col + kNeighborCols[direction];
             if (neighbor_row < 0 || neighbor_row >= rows || neighbor_col < 0 ||
                 neighbor_col >= cols) {
                 continue;
