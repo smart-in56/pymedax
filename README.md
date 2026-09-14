@@ -61,6 +61,6 @@ Here is the result of computing the medial axis on the image above, using the fo
 minimum_distance = 5.0: points with a distance smaller than 5.0 are ignored.
 angle_threshold_degrees = 90: only fronts originating from directions differing by at least 90° are considered.
 
-![alt text](examples/data/america_binary.png)
+![Binary input](https://raw.githubusercontent.com/smart-in56/pymedax/v0.1.0/examples/data/america_binary.png)
 
-![alt text](examples/data/america_overlay.png)
+![Medial axis result](https://raw.githubusercontent.com/smart-in56/pymedax/v0.1.0/examples/data/america_overlay.png)
