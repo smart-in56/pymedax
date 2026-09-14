@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=68", "wheel", "pybind11>=2.11", "numpy>=1.24"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pymedax"
+version = "0.1.0"
+description = "Medial-axis extraction for binary 2D NumPy images"
+readme = "README.md"
+license = {file = "LICENSE"}
+requires-python = ">=3.9"
+dependencies = ["numpy>=1.24"]
+
+[project.optional-dependencies]
+test = ["pytest>=7"]
+
+[tool.setuptools]
+packages = ["pymedax"]
+package-dir = {"" = "src"}
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
