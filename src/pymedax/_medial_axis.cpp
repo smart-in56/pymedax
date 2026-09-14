@@ -127,12 +127,13 @@ bool has_sufficient_front_angle(
         angles.push_back(std::atan2(row_delta, col_delta));
     }
 
+    constexpr double pi = 3.14159265358979323846;
     double max_angle = 0.0;
     for (size_t i = 0; i < angles.size(); ++i) {
         for (size_t j = i + 1; j < angles.size(); ++j) {
             double angle = std::fabs(angles[i] - angles[j]);
-            if (angle > M_PI) {
-                angle = 2 * M_PI - angle;
+            if (angle > pi) {
+                angle = 2 * pi - angle;
             }
             if (angle > max_angle) {
                 max_angle = angle;
@@ -140,7 +141,6 @@ bool has_sufficient_front_angle(
         }
     }
 
-    constexpr double pi = 3.14159265358979323846;
     const double angle_degrees = max_angle * 180.0 / pi;
     return angle_degrees >= angle_threshold_degrees;
 }
